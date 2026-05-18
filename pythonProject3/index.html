@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Running Dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+<h2>🏃 Running Dashboard</h2>
+
+<div style="display: flex; gap: 12px; justify-content: flex-end; margin-bottom: 16px;">
+  <button id="langBtn" class="lang-btn">🌐 English</button>
+</div>
+
+<!-- 基本資料 -->
+<label id="lblMileage">每週跑量 (km)</label>
+<input type="number" id="mileage" placeholder="例如 50" value="50">
+
+<label id="lblDays">每週訓練日數（例如 4 或 4-6）</label>
+<input id="days" placeholder="4" value="5">
+
+<label id="lblAge">年齡</label>
+<input id="age" type="number" placeholder="35" value="35">
+
+<!-- 配速基準 -->
+<label id="lblPaceBasis">配速基準</label>
+<select id="paceBasis">
+  <option value="training" id="optTraining">最近訓練平均配速</option>
+  <option value="race" id="optRace">最近比賽時間</option>
+</select>
+
+<div id="trainingPaceBox">
+  <label id="lblTrainingPace">平均配速 (mm:ss)</label>
+  <input id="trainingPace" placeholder="6:00" value="6:00">
+  <div class="hint" id="hintTraining">💡 建議輸入最近2-3週嘅平均配速（唔係PB），反映當前狀態</div>
+</div>
+
+<div id="racePaceBox" style="display:none;">
+  <label id="lblRaceDist">比賽距離</label>
+  <select id="raceDist">
+    <option value="5K">5K</option>
+    <option value="10K">10K</option>
+    <option value="HM">半馬</option>
+    <option value="FM">全馬</option>
+  </select>
+
+  <label id="lblRaceTime">完成時間</label>
+  <input type="text" id="raceTime" placeholder="例如 4530 或 45:30 或 1:45:30" inputmode="numeric" value="48:00">
+  <div class="hint" id="hintRace">💡 直接輸入數字，系統自動轉換（例如 4530 = 45分30秒）</div>
+</div>
+
+<!-- 心率 -->
+<label id="lblMethod">心率方法</label>
+<select id="method">
+  <option value="basic">220 - age</option>
+  <option value="karvonen">Karvonen (儲備心率)</option>
+</select>
+
+<div id="karvonenBox" style="display:none;">
+  <label id="lblMaxHr">Max HR</label>
+  <input id="maxHr" type="number" placeholder="190">
+  <label id="lblRestHr">Rest HR</label>
+  <input id="restHr" type="number" placeholder="60">
+</div>
+
+<hr>
+
+<!-- 模式選項 -->
+<div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+  <label style="display: flex; align-items: center; gap: 8px;">
+    <input type="checkbox" id="summerMode">
+    <span id="lblSummerMode">☀️ 夏季模式 (香港夏天)</span>
+  </label>
+  <label style="display: flex; align-items: center; gap: 8px;">
+    <input type="checkbox" id="crossTrainMode">
+    <span id="lblCrossTrain">🔄 Cross Training (取代 Recovery Run)</span>
+  </label>
+</div>
+
+<hr>
+
+<!-- 目標設定 -->
+<label id="lblGoal">目標</label>
+<select id="goal">
+  <option value="5K">5K</option>
+  <option value="10K">10K</option>
+  <option value="HM">半馬 (HM)</option>
+  <option value="FM">全馬 (FM)</option>
+</select>
+
+<div id="weeksHint"></div>
+
+<label id="lblWeeks">訓練週數</label>
+<input id="weeks" type="number" placeholder="8">
+
+<!-- 按鈕 -->
+<button onclick="calculate()" id="btnCalculate">📊 計算訓練計劃</button>
+
+<div style="display: flex; gap: 12px; margin: 12px 0;">
+  <button id="exportIcsBtn" class="secondary-btn">📅 匯出 .ics (日曆)</button>
+  <button id="resetStorageBtn" class="secondary-btn danger">🗑️ 重置所有設定</button>
+</div>
+
+<!-- 結果顯示區 -->
+<div id="result" class="result-card"></div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
