@@ -1,50 +1,6 @@
-// ==================== 語言包 ====================
-const lang = {
-  zh: {
-    lblMileage: "每週跑量 (km)", lblDays: "每週訓練日數（例如 4 或 4-6）", lblAge: "年齡",
-    lblGender: "性別", genderMale: "男性", genderFemale: "女性", genderPreferNot: "不便透露",
-    lblPaceBasis: "配速基準", optTraining: "最近訓練平均配速", optRace: "最近比賽時間",
-    lblTrainingPace: "平均配速 (mm:ss)", hintTraining: "💡 建議輸入最近2-3週嘅平均配速（唔係PB），反映當前狀態",
-    lblRaceDist: "比賽距離", lblRaceTime: "完成時間", hintRace: "💡 直接輸入數字，系統自動轉換（例如 4530 = 45分30秒）",
-    lblMethod: "心率方法", lblMaxHr: "Max HR", lblRestHr: "Rest HR",
-    lblSummerMode: "☀️ 夏季模式 (香港夏天)", lblCrossTrain: "🔄 Cross Training (取代 Recovery Run)",
-    lblGoal: "目標", lblWeeks: "訓練週數", btnCalculate: "📊 計算訓練計劃",
-    recoveryRun: "恢復跑", crossTraining: "交叉訓練",
-    easy: "輕鬆跑", tempo: "節奏跑", long: "長課", interval: "間歇跑", rest: "休息",
-    hrZones: "心率區間 (bpm)", paceZones: "配速區間 (/km)",
-    z1Recovery: "Z1 恢復", z2Easy: "Z2 有氧", z3Aerobic: "Z3 耐力", z4Threshold: "Z4 閾值", z5Max: "Z5 最大",
-    paceRecovery: "恢復", paceEasy: "輕鬆", paceLong: "長課", paceTempo: "節奏", paceInterval: "間歇",
-    predictTitle: "預測比賽時間", warningFMLowMileage: "每週跑量不足，預測時間可能嚴重低估",
-    warningFMGeneral: "全馬受天氣、補給影響大，預測僅供參考",
-    planTitle: "訓練計劃 (WU=熱身, T=節奏, CD=緩和)", week: "第", weekSuffix: "週",
-    dayMon: "星期一", dayTue: "星期二", dayWed: "星期三", dayThu: "星期四", dayFri: "星期五", daySat: "星期六", daySun: "星期日",
-    dayHeader: "星期", typeHeader: "類型", workoutHeader: "訓練內容"
-  },
-  en: {
-    lblMileage: "Weekly Mileage (km)", lblDays: "Training Days/Week (e.g. 4 or 4-6)", lblAge: "Age",
-    lblGender: "Gender", genderMale: "Male", genderFemale: "Female", genderPreferNot: "Prefer not to say",
-    lblPaceBasis: "Pace Basis", optTraining: "Recent average training pace", optRace: "Recent race time",
-    lblTrainingPace: "Average pace (mm:ss)", hintTraining: "💡 Enter your average pace from the last 2-3 weeks (not PB)",
-    lblRaceDist: "Race Distance", lblRaceTime: "Finish Time", hintRace: "💡 Enter digits (e.g., 4530 = 45:30)",
-    lblMethod: "HR Method", lblMaxHr: "Max HR", lblRestHr: "Rest HR",
-    lblSummerMode: "☀️ Summer Mode (Hong Kong summer)", lblCrossTrain: "🔄 Cross Training (replace Recovery Run)",
-    lblGoal: "Goal", lblWeeks: "Weeks", btnCalculate: "📊 Generate Plan",
-    recoveryRun: "Recovery", crossTraining: "Cross Training",
-    easy: "Easy", tempo: "Tempo", long: "Long", interval: "Interval", rest: "Rest",
-    hrZones: "HR Zones (bpm)", paceZones: "Pace Zones (/km)",
-    z1Recovery: "Z1 Recovery", z2Easy: "Z2 Easy", z3Aerobic: "Z3 Aerobic", z4Threshold: "Z4 Threshold", z5Max: "Z5 Max",
-    paceRecovery: "Recovery", paceEasy: "Easy", paceLong: "Long", paceTempo: "Tempo", paceInterval: "Interval",
-    predictTitle: "Predicted Race Times", warningFMLowMileage: "Weekly mileage is low, predicted time may be significantly underestimated",
-    warningFMGeneral: "Marathon prediction is just a reference, actual time may be 10-20 min slower",
-    planTitle: "Training Plan (WU=Warmup, T=Tempo, CD=Cool Down)", week: "Week ", weekSuffix: "",
-    dayMon: "Mon", dayTue: "Tue", dayWed: "Wed", dayThu: "Thu", dayFri: "Fri", daySat: "Sat", daySun: "Sun",
-    dayHeader: "Day", typeHeader: "Type", workoutHeader: "Workout"
-  }
-};
+let currentPlanId = null;
 
-let currentLang = "zh";
-
-// ==================== UI 綁定與儲存 ====================
+// ===== UI 元素綁定 =====
 document.getElementById("method").addEventListener("change", function () {
   document.getElementById("karvonenBox").style.display = this.value === "karvonen" ? "block" : "none";
   saveSettings();
@@ -76,45 +32,9 @@ document.getElementById("raceTime").addEventListener("change", function() { save
 document.getElementById("maxHr").addEventListener("change", function() { saveSettings(); autoRecalculate(); });
 document.getElementById("restHr").addEventListener("change", function() { saveSettings(); autoRecalculate(); });
 document.getElementById("weeks").addEventListener("change", function() { saveSettings(); autoRecalculate(); });
-document.getElementById("langBtn").addEventListener("click", toggleLanguage);
 document.getElementById("exportIcsBtn").addEventListener("click", exportToIcs);
 document.getElementById("resetStorageBtn").addEventListener("click", resetStorage);
 document.getElementById("calculateBtn").addEventListener("click", calculate);
-
-function toggleLanguage() {
-  currentLang = currentLang === "zh" ? "en" : "zh";
-  updateUILanguage();
-  saveSettings();
-  autoRecalculate();
-}
-
-function updateUILanguage() {
-  const t = lang[currentLang];
-  document.getElementById("lblMileage").innerText = t.lblMileage;
-  document.getElementById("lblDays").innerText = t.lblDays;
-  document.getElementById("lblAge").innerText = t.lblAge;
-  document.getElementById("lblGender").innerText = t.lblGender;
-  document.getElementById("genderMale").innerText = t.genderMale;
-  document.getElementById("genderFemale").innerText = t.genderFemale;
-  document.getElementById("genderPreferNot").innerText = t.genderPreferNot;
-  document.getElementById("lblPaceBasis").innerText = t.lblPaceBasis;
-  document.getElementById("optTraining").innerText = t.optTraining;
-  document.getElementById("optRace").innerText = t.optRace;
-  document.getElementById("lblTrainingPace").innerText = t.lblTrainingPace;
-  document.getElementById("hintTraining").innerText = t.hintTraining;
-  document.getElementById("lblRaceDist").innerText = t.lblRaceDist;
-  document.getElementById("lblRaceTime").innerText = t.lblRaceTime;
-  document.getElementById("hintRace").innerText = t.hintRace;
-  document.getElementById("lblMethod").innerText = t.lblMethod;
-  document.getElementById("lblMaxHr").innerText = t.lblMaxHr;
-  document.getElementById("lblRestHr").innerText = t.lblRestHr;
-  document.getElementById("lblSummerMode").innerText = t.lblSummerMode;
-  document.getElementById("lblCrossTrain").innerText = t.lblCrossTrain;
-  document.getElementById("lblGoal").innerText = t.lblGoal;
-  document.getElementById("lblWeeks").innerText = t.lblWeeks;
-  document.getElementById("btnCalculate").innerText = t.btnCalculate;
-  document.getElementById("langBtn").innerText = currentLang === "zh" ? "🌐 English" : "🌐 中文";
-}
 
 function saveSettings() {
   let settings = {
@@ -132,8 +52,7 @@ function saveSettings() {
     goal: document.getElementById("goal").value,
     weeks: document.getElementById("weeks").value,
     summerMode: document.getElementById("summerMode").checked,
-    crossTrainMode: document.getElementById("crossTrainMode").checked,
-    lang: currentLang
+    crossTrainMode: document.getElementById("crossTrainMode").checked
   };
   localStorage.setItem("runningDashboardSettings", JSON.stringify(settings));
 }
@@ -157,8 +76,6 @@ function loadSettings() {
   document.getElementById("weeks").value = s.weeks || 12;
   document.getElementById("summerMode").checked = s.summerMode || false;
   document.getElementById("crossTrainMode").checked = s.crossTrainMode || false;
-  if (s.lang) currentLang = s.lang;
-  updateUILanguage();
   let isRace = document.getElementById("paceBasis").value === "race";
   document.getElementById("trainingPaceBox").style.display = isRace ? "none" : "block";
   document.getElementById("racePaceBox").style.display = isRace ? "block" : "none";
@@ -175,26 +92,22 @@ function resetStorage() {
 
 function autoRecalculate() {
   let mileage = document.getElementById("mileage").value;
-  if (mileage && mileage > 0) {
-    calculate();
-  }
+  if (mileage && mileage > 0) calculate();
 }
 
-// ==================== 輔助函數 ====================
+// ===== 輔助函數 =====
 function paceToSec(p) {
   let parts = p.split(":").map(Number);
   if (parts.length === 2) return parts[0] * 60 + parts[1];
   if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
   return 0;
 }
-
 function secToPace(sec) {
   let m = Math.floor(sec / 60);
   let s = sec % 60;
   if (s < 10) s = "0" + s;
   return m + ":" + s;
 }
-
 function formatTime(sec) {
   let h = Math.floor(sec / 3600);
   let m = Math.floor((sec % 3600) / 60);
@@ -211,7 +124,6 @@ function getRecommendedWeeks(goal) {
   if (goal === "FM") return "📌 建議 12–16 週";
   return "";
 }
-
 function autoFillWeeks(goal) {
   if (goal === "5K") return 8;
   if (goal === "10K") return 10;
@@ -262,7 +174,7 @@ function get10kPaceSec() {
     let rawTime = document.getElementById("raceTime").value;
     let raceTimeSec = smartParseRaceTime(rawTime);
     if (!raceTimeSec) {
-      alert(currentLang === "zh" ? "請輸入正確嘅比賽時間" : "Please enter a valid race time");
+      alert("請輸入正確嘅比賽時間");
       return null;
     }
     let avgPaceSec = raceTimeSec / distKm;
@@ -322,11 +234,11 @@ function getHRZones(age, method, maxHr, restHr) {
     z2: [calc(0.6), calc(0.7)],
     z3: [calc(0.7), calc(0.8)],
     z4: [calc(0.8), calc(0.9)],
-    z5: [calc(0.9), calc(1.0)]
+    z5: [calc(0.9), 1.0]
   };
 }
 
-// ==================== Taper 與訓練量 ====================
+// ===== Taper 與訓練量 =====
 function getTaperMultiplier(weeksToRace) {
   if (weeksToRace >= 3) return 1.0;
   if (weeksToRace === 2) return 0.8;
@@ -404,7 +316,6 @@ function getInterval(w, pace10kSec, goal, weeksToRace) {
 }
 
 function buildWeek(days, paces, longRunKm, interval, goal, week, totalWeeks, pace10kSec) {
-  let t = lang[currentLang];
   let weeksToRace = totalWeeks - week;
   let crossTrain = document.getElementById("crossTrainMode").checked;
   let easyMin = getEasyMinutes(week, totalWeeks, goal);
@@ -413,37 +324,37 @@ function buildWeek(days, paces, longRunKm, interval, goal, week, totalWeeks, pac
   let baseTempoPaceSec = pace10kSec * 1.02;
   let tempoPace = getTempoPace(tempoMin, baseTempoPaceSec);
   let tempoDetail = (weeksToRace === 0) ? "🏁 比賽日" : `10WU + ${tempoMin}T + 10CD @ ${tempoPace}`;
-  let crossTrainDetail = currentLang === "zh" ? "游泳30min / 單車45min / 肌力訓練" : "Swim 30min / Bike 45min / Strength";
-  let recoveryDetail = crossTrain ? `${t.crossTraining}: ${crossTrainDetail}` : `${recoveryMin}min ${t.recoveryRun} @ ${paces.recovery}`;
+  let crossTrainDetail = "游泳30min / 單車45min / 肌力訓練";
+  let recoveryDetail = crossTrain ? `交叉訓練: ${crossTrainDetail}` : `${recoveryMin}min 恢復跑 @ ${paces.recovery}`;
   let baseWeek = [
-    { day: t.dayMon, type: t.rest, detail: "-" },
-    { day: t.dayTue, type: t.interval, detail: interval },
-    { day: t.dayWed, type: t.recoveryRun, detail: recoveryDetail },
-    { day: t.dayThu, type: t.tempo, detail: tempoDetail },
-    { day: t.dayFri, type: t.rest, detail: "-" },
-    { day: t.daySat, type: t.easy, detail: `${easyMin}min ${t.easy} @ ${paces.easy}` },
-    { day: t.daySun, type: t.long, detail: (weeksToRace === 0) ? "🏁 RACE DAY" : `${longRunKm}km ${t.long} @ ${paces.long}` }
+    { day: "星期一", type: "休息", detail: "-" },
+    { day: "星期二", type: "間歇跑", detail: interval },
+    { day: "星期三", type: "恢復跑", detail: recoveryDetail },
+    { day: "星期四", type: "節奏跑", detail: tempoDetail },
+    { day: "星期五", type: "休息", detail: "-" },
+    { day: "星期六", type: "輕鬆跑", detail: `${easyMin}min 輕鬆跑 @ ${paces.easy}` },
+    { day: "星期日", type: "長課", detail: (weeksToRace === 0) ? "🏁 RACE DAY" : `${longRunKm}km 長課 @ ${paces.long}` }
   ];
-  if (crossTrain) baseWeek[2].type = t.crossTraining;
+  if (crossTrain) baseWeek[2].type = "交叉訓練";
   if (weeksToRace === 0) {
-    baseWeek[6].type = "🏁 RACE DAY";
+    baseWeek[6].type = "🏁 比賽日";
     baseWeek[6].detail = `${goal} 比賽日！加油！`;
     return baseWeek;
   }
   let weekPlan = JSON.parse(JSON.stringify(baseWeek));
   if (days <= 2) {
-    weekPlan = weekPlan.map(d => ({ day: d.day, type: t.rest, detail: "-" }));
-    weekPlan[3] = { day: t.dayThu, type: t.easy, detail: `${easyMin}min ${t.easy} @ ${paces.easy}` };
-    weekPlan[6] = { day: t.daySun, type: t.long, detail: `${Math.round(longRunKm * 0.7)}km ${t.long} @ ${paces.long}` };
+    weekPlan = weekPlan.map(d => ({ day: d.day, type: "休息", detail: "-" }));
+    weekPlan[3] = { day: "星期四", type: "輕鬆跑", detail: `${easyMin}min 輕鬆跑 @ ${paces.easy}` };
+    weekPlan[6] = { day: "星期日", type: "長課", detail: `${Math.round(longRunKm * 0.7)}km 長課 @ ${paces.long}` };
     return weekPlan;
   }
   let keepTypes = {
-    3: [t.interval, t.tempo, t.long],
-    4: [t.interval, t.recoveryRun, t.tempo, t.long],
-    5: [t.interval, t.recoveryRun, t.tempo, t.easy, t.long]
+    3: ["間歇跑", "節奏跑", "長課"],
+    4: ["間歇跑", "恢復跑", "節奏跑", "長課"],
+    5: ["間歇跑", "恢復跑", "節奏跑", "輕鬆跑", "長課"]
   };
-  if (keepTypes[days]) return weekPlan.map(d => keepTypes[days].includes(d.type) ? d : { day: d.day, type: t.rest, detail: "-" });
-  if (days === 6) return weekPlan.map(d => d.day === t.dayFri ? { day: d.day, type: t.easy, detail: `${easyMin}min ${t.easy} @ ${paces.easy}` } : d);
+  if (keepTypes[days]) return weekPlan.map(d => keepTypes[days].includes(d.type) ? d : { day: d.day, type: "休息", detail: "-" });
+  if (days === 6) return weekPlan.map(d => d.day === "星期五" ? { day: "星期五", type: "輕鬆跑", detail: `${easyMin}min 輕鬆跑 @ ${paces.easy}` } : d);
   return weekPlan;
 }
 
@@ -458,17 +369,14 @@ function generatePlan(paces, goal, weeks, days, pace10kSec) {
   return plan;
 }
 
-// ==================== 渲染 (無達成度功能) ====================
 function renderPlan(plan) {
-  let t = lang[currentLang];
   let html = "";
   for (let w of plan) {
-    html += `<h4>📆 ${t.week} ${w.week}${t.weekSuffix}</h4>`;
+    html += `<h4>📆 第 ${w.week} 週</h4>`;
     html += `<div class="table-responsive">`;
     html += `<table class="plan-table">`;
-    html += `<thead>`;
-    html += `<tr><th>${t.dayHeader}</th><th>${t.typeHeader}</th><th>${t.workoutHeader}</th></tr>`;
-    html += `</thead><tbody>`;
+    html += `<thead><tr><th>星期</th><th>類型</th><th>訓練內容</th></tr></thead>`;
+    html += `<tbody>`;
     for (let d of w.days) {
       html += `<tr>`;
       html += `<td>${d.day}</td>`;
@@ -483,7 +391,6 @@ function renderPlan(plan) {
   return html;
 }
 
-// ==================== 匯出日曆 ====================
 function exportToIcs() {
   let plan = window.lastGeneratedPlan;
   if (!plan || plan.length === 0) { alert("請先計算訓練計劃"); return; }
@@ -492,8 +399,8 @@ function exportToIcs() {
   startDate.setDate(startDate.getDate() + (1 - startDate.getDay()));
   plan.forEach((week, wi) => {
     week.days.forEach((day, di) => {
-      if (day.type === lang[currentLang].rest) return;
-      if (day.type.includes("RACE DAY")) return;
+      if (day.type === "休息") return;
+      if (day.type.includes("比賽日")) return;
       let eventDate = new Date(startDate);
       eventDate.setDate(startDate.getDate() + (wi * 7) + di);
       let summary = `${day.type}: ${day.detail}`;
@@ -513,7 +420,6 @@ function exportToIcs() {
   URL.revokeObjectURL(link.href);
 }
 
-// ==================== 主要計算 ====================
 function calculate() {
   let mileage = Number(document.getElementById("mileage").value);
   let days = Number(document.getElementById("days").value);
@@ -524,10 +430,9 @@ function calculate() {
   if (method === "karvonen" && (!maxHr || !restHr)) { alert("請輸入 Max HR 同 Rest HR"); return; }
   let goal = document.getElementById("goal").value;
   let weeks = Number(document.getElementById("weeks").value) || 8;
-  let t = lang[currentLang];
 
   if (mileage < 15) {
-    document.getElementById("result").innerHTML = `<div class="warning">🏃 ${currentLang === "zh" ? "你而家每週跑量" : "Your weekly mileage is"} ${mileage}km，${currentLang === "zh" ? "建議先享受跑步，每週輕鬆跑 2-3 次，每次 20-30 分鐘，慢慢增加到 15km 以上再嚟睇課表啦！" : "focus on enjoying running 2-3 times a week for 20-30 min each, then come back when you reach 15km/week!"}</div>`;
+    document.getElementById("result").innerHTML = `<div class="warning">🏃 你而家每週跑量 ${mileage}km，建議先享受跑步，每週輕鬆跑 2-3 次，每次 20-30 分鐘，慢慢增加到 15km 以上再嚟睇課表啦！</div>`;
     return;
   }
 
@@ -544,31 +449,31 @@ function calculate() {
   let plan = generatePlan(paces, goal, weeks, days, pace10kSec);
   window.lastGeneratedPlan = plan;
 
-  let hrHtml = `<div class="zone-card"><h3>❤️ ${t.hrZones}</h3>
-    <p>${t.z1Recovery}: ${hr.z1[0]}–${hr.z1[1]}</p>
-    <p>${t.z2Easy}: ${hr.z2[0]}–${hr.z2[1]}</p>
-    <p>${t.z3Aerobic}: ${hr.z3[0]}–${hr.z3[1]}</p>
-    <p>${t.z4Threshold}: ${hr.z4[0]}–${hr.z4[1]}</p>
-    <p>${t.z5Max}: ${hr.z5[0]}–${hr.z5[1]}</p>
+  let hrHtml = `<div class="zone-card"><h3>❤️ 心率區間 (bpm)</h3>
+    <p>Z1 恢復: ${hr.z1[0]}–${hr.z1[1]}</p>
+    <p>Z2 有氧: ${hr.z2[0]}–${hr.z2[1]}</p>
+    <p>Z3 耐力: ${hr.z3[0]}–${hr.z3[1]}</p>
+    <p>Z4 閾值: ${hr.z4[0]}–${hr.z4[1]}</p>
+    <p>Z5 最大: ${hr.z5[0]}–${hr.z5[1]}</p>
   </div>`;
-  let paceHtml = `<div class="zone-card"><h3>🏃 ${t.paceZones}</h3>
-    <p>${t.paceRecovery}: ${paces.recovery}</p>
-    <p>${t.paceEasy}: ${paces.easy}</p>
-    <p>${t.paceLong}: ${paces.long}</p>
-    <p>${t.paceTempo}: ${paces.tempo}</p>
-    <p>${t.paceInterval}: ${paces.interval}</p>
+  let paceHtml = `<div class="zone-card"><h3>🏃 配速區間 (/km)</h3>
+    <p>恢復: ${paces.recovery}</p>
+    <p>輕鬆: ${paces.easy}</p>
+    <p>長課: ${paces.long}</p>
+    <p>節奏: ${paces.tempo}</p>
+    <p>間歇: ${paces.interval}</p>
   </div>`;
 
-  let raceHtml = `<div class="prediction-card"><h3>🏁 ${t.predictTitle}</h3><div class="prediction-grid">`;
+  let raceHtml = `<div class="prediction-card"><h3>🏁 預測比賽時間</h3><div class="prediction-grid">`;
   for (let [dist, sec] of Object.entries(displayRace)) {
     raceHtml += `<div class="prediction-item">${dist}: ${formatTime(sec)}</div>`;
   }
   raceHtml += `</div>`;
-  if (goal === "FM" && mileage < 50) raceHtml += `<div class="warning">⚠️ ${t.warningFMLowMileage}</div>`;
-  else if (goal === "FM") raceHtml += `<div class="warning">⚠️ ${t.warningFMGeneral}</div>`;
+  if (goal === "FM" && mileage < 50) raceHtml += `<div class="warning">⚠️ 每週跑量不足，預測時間可能嚴重低估</div>`;
+  else if (goal === "FM") raceHtml += `<div class="warning">⚠️ 全馬受天氣、補給影響大，預測僅供參考</div>`;
   raceHtml += `</div>`;
 
-  let planHtml = `<h3>📅 ${t.planTitle}</h3>${renderPlan(plan)}`;
+  let planHtml = `<h3>📅 訓練計劃 (WU=熱身, T=節奏, CD=緩和)</h3>${renderPlan(plan)}`;
 
   document.getElementById("result").innerHTML = `<div class="two-columns">${hrHtml}${paceHtml}</div>${raceHtml}${planHtml}`;
   saveSettings();

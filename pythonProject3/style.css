@@ -69,13 +69,6 @@ button:active {
   transform: scale(0.98);
 }
 
-.lang-btn {
-  background: #6c6c70;
-  padding: 8px 16px;
-  width: auto;
-  margin: 0;
-}
-
 .secondary-btn {
   background: #e5e5ea;
   color: #1c1c1e;
