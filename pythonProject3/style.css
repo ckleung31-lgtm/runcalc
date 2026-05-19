@@ -222,14 +222,15 @@ h4 {
 .mode-options {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   margin: 16px 0 8px 0;
 }
 
 .mode-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  gap: 8px;
 }
 
 .mode-label {
@@ -238,13 +239,24 @@ h4 {
   gap: 8px;
   font-size: 16px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .mode-hint {
   font-size: 12px;
   color: #6c6c70;
-  margin-left: 0px;
   line-height: 1.4;
+  margin: 0;
+}
+
+@media (max-width: 560px) {
+  .mode-item {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .mode-hint {
+    margin-left: 24px;
+  }
 }
 
 .result-card {
