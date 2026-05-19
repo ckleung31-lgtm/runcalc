@@ -204,8 +204,8 @@ function renderPaceZones(zones) {
       <tbody>
         ${types.map(t => `<tr>
           <td style="padding:4px 0">${t.name}</td>
-          <td style="padding:4px 0">${zones.normal[t.key]}侧
-          <td style="padding:4px 0; color:#ff9500">${zones.summer[t.key]}侧
+          <td style="padding:4px 0">${zones.normal[t.key]}</td>
+          <td style="padding:4px 0; color:#ff9500">${zones.summer[t.key]}</td>
         </tr>`).join('')}
       </tbody>
     </table>
