@@ -100,6 +100,7 @@ function secToPace(sec) {
 }
 
 function formatTime(sec) {
+  sec = Math.round(sec);  // ← 加呢行，確保秒數係整數
   let h = Math.floor(sec / 3600);
   let m = Math.floor((sec % 3600) / 60);
   let s = sec % 60;
@@ -188,17 +189,34 @@ function getPaceZones(pace10k) {
 }
 
 function getHRZones(age, method, maxHr, restHr) {
-  let max = method === "basic" ? 220 - age : Number(maxHr);
-  let calc = (p) => {
-    if (method === "basic") return Math.round(max * p);
-    return Math.round(restHr + (max - restHr) * p);
-  };
+  let max;
+  if (method === "basic") {
+    max = 220 - age;
+  } else {
+    max = Number(maxHr);
+    if (isNaN(max)) max = 220 - age;
+  }
+
+  let rest = Number(restHr);
+  if (isNaN(rest)) rest = 60;
+
+  function calc(p) {
+    if (method === "basic") {
+      return Math.round(max * p);
+    } else {
+      return Math.round(rest + (max - rest) * p);
+    }
+  }
+
+  let z5Max = calc(1.0);
+  if (isNaN(z5Max)) z5Max = method === "basic" ? max : Math.round(rest + (max - rest));
+
   return {
     z1: [calc(0.5), calc(0.6)],
     z2: [calc(0.6), calc(0.7)],
     z3: [calc(0.7), calc(0.8)],
     z4: [calc(0.8), calc(0.9)],
-    z5: [calc(0.9), Math.round(calc(1.0))]
+    z5: [calc(0.9), z5Max]
   };
 }
 
