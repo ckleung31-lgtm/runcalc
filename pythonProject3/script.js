@@ -17,7 +17,6 @@ document.getElementById("goal").addEventListener("change", function () {
   saveSettings();
   calculate();
 });
-document.getElementById("summerMode").addEventListener("change", function() { saveSettings(); calculate(); });
 document.getElementById("mileage").addEventListener("change", function() { saveSettings(); calculate(); });
 document.getElementById("days").addEventListener("change", function() { saveSettings(); calculate(); });
 document.getElementById("age").addEventListener("change", function() { saveSettings(); calculate(); });
@@ -46,8 +45,7 @@ function saveSettings() {
     maxHr: document.getElementById("maxHr").value,
     restHr: document.getElementById("restHr").value,
     goal: document.getElementById("goal").value,
-    weeks: document.getElementById("weeks").value,
-    summerMode: document.getElementById("summerMode").checked
+    weeks: document.getElementById("weeks").value
   };
   localStorage.setItem("runningSettings", JSON.stringify(settings));
 }
@@ -69,8 +67,7 @@ function loadSettings() {
   document.getElementById("restHr").value = s.restHr || 60;
   document.getElementById("goal").value = s.goal || "HM";
   document.getElementById("weeks").value = s.weeks || 12;
-  document.getElementById("summerMode").checked = s.summerMode || false;
-  
+
   let isRace = document.getElementById("paceBasis").value === "race";
   document.getElementById("trainingPaceBox").style.display = isRace ? "none" : "block";
   document.getElementById("racePaceBox").style.display = isRace ? "block" : "none";
@@ -100,7 +97,7 @@ function secToPace(sec) {
 }
 
 function formatTime(sec) {
-  sec = Math.round(sec);  // ← 加呢行，確保秒數係整數
+  sec = Math.round(sec);
   let h = Math.floor(sec / 3600);
   let m = Math.floor((sec % 3600) / 60);
   let s = sec % 60;
@@ -110,10 +107,10 @@ function formatTime(sec) {
 }
 
 function getRecommendedWeeks(goal) {
-  if (goal === "5K") return "建議 6–8 週";
-  if (goal === "10K") return "建議 8–10 週";
-  if (goal === "HM") return "建議 10–14 週";
-  if (goal === "FM") return "建議 12–16 週";
+  if (goal === "5K") return "📌 建議 6–8 週";
+  if (goal === "10K") return "📌 建議 8–10 週";
+  if (goal === "HM") return "📌 建議 10–14 週";
+  if (goal === "FM") return "📌 建議 12–16 週";
   return "";
 }
 
@@ -123,11 +120,6 @@ function autoFillWeeks(goal) {
   if (goal === "HM") return 12;
   if (goal === "FM") return 16;
   return 8;
-}
-
-function applySummerAdjustment(pace, isSummer) {
-  if (!isSummer) return pace;
-  return Math.round(pace * 1.04);
 }
 
 function smartParseTime(input) {
@@ -151,14 +143,12 @@ function smartParseTime(input) {
 
 function get10kPaceSec() {
   let basis = document.getElementById("paceBasis").value;
-  let isSummer = document.getElementById("summerMode").checked;
   let gender = document.getElementById("gender").value;
-  
+
   if (basis === "training") {
     let trainingPace = paceToSec(document.getElementById("trainingPace").value);
     if (!trainingPace) return null;
     let pace10k = Math.round(trainingPace / 1.15);
-    pace10k = applySummerAdjustment(pace10k, isSummer);
     if (gender === "female") pace10k = Math.round(pace10k * 1.03);
     return pace10k;
   } else {
@@ -172,22 +162,58 @@ function get10kPaceSec() {
     let avgPace = timeSec / distKm;
     let t10k = avgPace * distKm * Math.pow(10 / distKm, 1.06);
     let pace10k = Math.round(t10k / 10);
-    pace10k = applySummerAdjustment(pace10k, isSummer);
     if (gender === "female") pace10k = Math.round(pace10k * 1.03);
     return pace10k;
   }
 }
 
+// ==================== 配速區間（連夏季建議）====================
 function getPaceZones(pace10k) {
-  return {
+  let normal = {
     recovery: secToPace(Math.round(pace10k * 1.25)),
     easy: secToPace(Math.round(pace10k * 1.15)),
     long: secToPace(Math.round(pace10k * 1.07)),
     tempo: secToPace(Math.round(pace10k * 1.02)),
     interval: secToPace(Math.round(pace10k * 0.92))
   };
+
+  let summerPace = pace10k * 1.04;
+  let summer = {
+    recovery: secToPace(Math.round(summerPace * 1.25)),
+    easy: secToPace(Math.round(summerPace * 1.15)),
+    long: secToPace(Math.round(summerPace * 1.07)),
+    tempo: secToPace(Math.round(summerPace * 1.02)),
+    interval: secToPace(Math.round(summerPace * 0.92))
+  };
+
+  return { normal, summer };
 }
 
+function renderPaceZones(zones) {
+  let types = [
+    { name: "恢復", key: "recovery" },
+    { name: "輕鬆", key: "easy" },
+    { name: "長課", key: "long" },
+    { name: "節奏", key: "tempo" },
+    { name: "間歇", key: "interval" }
+  ];
+
+  return `<div class="zone-card"><h3>🏃 配速區間 (/km)</h3>
+    <table style="width:100%; font-size:13px; border-collapse:collapse;">
+      <thead><tr><th style="text-align:left">類型</th><th style="text-align:left">正常配速</th><th style="text-align:left">☀️ 夏季建議</th></tr></thead>
+      <tbody>
+        ${types.map(t => `<tr>
+          <td style="padding:4px 0">${t.name}</td>
+          <td style="padding:4px 0">${zones.normal[t.key]}侧
+          <td style="padding:4px 0; color:#ff9500">${zones.summer[t.key]}侧
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <div class="hint" style="margin-top:8px;">☀️ 夏季建議配速慢4%，減低心肺負擔</div>
+  </div>`;
+}
+
+// ==================== 心率區間 ====================
 function getHRZones(age, method, maxHr, restHr) {
   let max;
   if (method === "basic") {
@@ -220,6 +246,7 @@ function getHRZones(age, method, maxHr, restHr) {
   };
 }
 
+// ==================== 預測比賽時間 ====================
 function predictRace(pace10k, mileage) {
   let gender = document.getElementById("gender").value;
   let t10k = pace10k * 10;
@@ -245,6 +272,7 @@ function predictRace(pace10k, mileage) {
   return raw;
 }
 
+// ==================== 訓練計劃 ====================
 function getTaperMultiplier(weeksToRace) {
   if (weeksToRace >= 3) return 1.0;
   if (weeksToRace === 2) return 0.8;
@@ -347,7 +375,7 @@ function buildWeek(days, paces, longKm, interval, goal, week, totalWeeks, pace10
 }
 
 function generatePlan(pace10k, goal, weeks, days) {
-  let paces = getPaceZones(pace10k);
+  let paces = getPaceZones(pace10k).normal;
   let plan = [];
   for (let w = 0; w < weeks; w++) {
     let longKm = getLongRunKm(w + 1, weeks, goal);
@@ -358,14 +386,16 @@ function generatePlan(pace10k, goal, weeks, days) {
   return plan;
 }
 
+// ==================== 渲染 ====================
 function renderPlan(plan) {
   let html = "";
   for (let w of plan) {
     html += `<h4>📆 第 ${w.week} 週</h4>`;
     html += `<div class="table-responsive">`;
     html += `<table class="plan-table">`;
-    html += `<thead><tr><th>星期</th><th>類型</th><th>訓練內容</th></tr></thead>`;
-    html += `<tbody>`;
+    html += `<thead>`;
+    html += `<tr><th>星期</th><th>類型</th><th>訓練內容</th></tr>`;
+    html += `</thead><tbody>`;
     for (let d of w.days) {
       html += `<tr>`;
       html += `<td>${d.day}</td>`;
@@ -380,6 +410,7 @@ function renderPlan(plan) {
   return html;
 }
 
+// ==================== 匯出日曆 ====================
 function exportToIcs() {
   let plan = window.lastPlan;
   if (!plan) { alert("請先計算訓練計劃"); return; }
@@ -406,6 +437,7 @@ function exportToIcs() {
   link.click();
 }
 
+// ==================== 主函數 ====================
 function calculate() {
   let mileage = Number(document.getElementById("mileage").value);
   let days = Number(document.getElementById("days").value);
@@ -431,6 +463,8 @@ function calculate() {
   if (!pace10k) return;
 
   let zones = getPaceZones(pace10k);
+  let paceHtml = renderPaceZones(zones);
+
   let hr = getHRZones(age, method, maxHr, restHr);
   let race = predictRace(pace10k, mileage);
   let plan = generatePlan(pace10k, goal, weeks, days);
@@ -447,14 +481,6 @@ function calculate() {
     <p>Z3 耐力: ${hr.z3[0]}–${hr.z3[1]}</p>
     <p>Z4 閾值: ${hr.z4[0]}–${hr.z4[1]}</p>
     <p>Z5 最大: ${hr.z5[0]}–${hr.z5[1]}</p>
-  </div>`;
-
-  let paceHtml = `<div class="zone-card"><h3>🏃 配速區間 (/km)</h3>
-    <p>恢復: ${zones.recovery}</p>
-    <p>輕鬆: ${zones.easy}</p>
-    <p>長課: ${zones.long}</p>
-    <p>節奏: ${zones.tempo}</p>
-    <p>間歇: ${zones.interval}</p>
   </div>`;
 
   let raceHtml = `<div class="prediction-card"><h3>🏁 預測比賽時間</h3><div class="prediction-grid">`;
