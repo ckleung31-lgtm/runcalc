@@ -108,7 +108,6 @@ button:active {
   margin-top: 6px;
 }
 
-/* 兩欄佈局 */
 .two-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -133,7 +132,6 @@ button:active {
   font-size: 14px;
 }
 
-/* 預測卡片 */
 .prediction-card {
   background: #f9f9fb;
   border-radius: 12px;
@@ -162,7 +160,6 @@ button:active {
   padding: 8px;
 }
 
-/* 警告 */
 .warning {
   background: #fff3e0;
   padding: 8px 12px;
@@ -172,33 +169,52 @@ button:active {
   color: #b45f06;
 }
 
-/* 表格 */
-table {
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 20px;
+}
+
+.plan-table {
+  min-width: 500px;
   width: 100%;
   border-collapse: collapse;
-  margin-top: 12px;
   font-size: 14px;
 }
 
-th {
+.plan-table th {
   background: #007aff;
   color: white;
   padding: 10px 6px;
   font-weight: 600;
+  text-align: left;
 }
 
-td {
+.plan-table td {
   padding: 10px 6px;
   border-bottom: 1px solid #e5e5ea;
   vertical-align: top;
 }
 
-tr:nth-child(even) {
-  background: #f9f9fb;
+.plan-table th:first-child,
+.plan-table td:first-child {
+  width: 70px;
 }
 
-td:last-child {
+.plan-table th:nth-child(2),
+.plan-table td:nth-child(2) {
+  width: 85px;
+}
+
+.plan-table th:nth-child(3),
+.plan-table td:nth-child(3) {
+  width: auto;
   word-break: break-word;
+  white-space: normal;
+}
+
+tr:nth-child(even) {
+  background: #f9f9fb;
 }
 
 h4 {
@@ -210,14 +226,27 @@ h4 {
   display: inline-block;
 }
 
-/* 結果卡片 */
+.mode-options {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+
+.mode-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
 .result-card {
   margin-top: 24px;
   border-top: 1px solid #e5e5ea;
   padding-top: 8px;
 }
 
-/* 手機細屏 */
 @media (max-width: 560px) {
   .two-columns {
     grid-template-columns: 1fr;
@@ -232,11 +261,18 @@ h4 {
   .container {
     padding: 16px 12px;
   }
-  table, th, td {
-    font-size: 13px;
+  .plan-table th:first-child,
+  .plan-table td:first-child {
+    width: 55px;
   }
-  th, td {
+  .plan-table th:nth-child(2),
+  .plan-table td:nth-child(2) {
+    width: 70px;
+  }
+  .plan-table th,
+  .plan-table td {
     padding: 8px 4px;
+    font-size: 12px;
   }
   h3 {
     font-size: 18px;
@@ -247,5 +283,10 @@ h4 {
   button {
     padding: 12px;
     font-size: 16px;
+  }
+  .mode-options {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
 }
