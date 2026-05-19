@@ -397,7 +397,7 @@ function renderPlan(plan) {
       html += `<tr>`;
       html += `<td>${d.day}</td>`;
       html += `<td>${d.type}</td>`;
-      html += `<td class="workout-detail">${d.detail || "-"}侧`;
+      html += `<td class="workout-detail">${d.detail || "-"}</td>`;
       html += `</tr>`;
     }
     html += `</tbody>`;
