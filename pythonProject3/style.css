@@ -305,7 +305,7 @@ h4 {
 
 .mode-label {
   display: flex;
-  align-items: center;
+  align-items: left;
   gap: 8px;
   justify-content: flex-start;  /* 加呢行，強制靠左 */
 }
