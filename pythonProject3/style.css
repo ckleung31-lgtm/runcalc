@@ -219,35 +219,60 @@ h4 {
   display: inline-block;
 }
 
-/* 模式選項 - 手機優化 */
 .mode-options {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 24px;
-  align-items: center;
+  flex-direction: column;
+  gap: 16px;
   margin: 16px 0 8px 0;
 }
 
+.mode-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .mode-label {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 15px;
-  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .mode-hint {
   font-size: 12px;
   color: #6c6c70;
-  margin-bottom: 8px;
-  padding-left: 24px;
+  margin-left: 0px;
+  line-height: 1.4;
 }
 
 .result-card {
   margin-top: 24px;
   border-top: 1px solid #e5e5ea;
   padding-top: 8px;
+}
+
+/* 星期三選擇樣式 */
+.workout-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.workout-choice label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: normal;
+  margin: 0;
+}
+
+.workout-choice input[type="radio"] {
+  width: auto;
+  margin: 0;
 }
 
 /* 手機細屏 */
@@ -288,44 +313,4 @@ h4 {
     padding: 12px;
     font-size: 16px;
   }
-
-/* 模式選項 - 每個選項獨立一行 */
-.mode-options {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin: 16px 0 8px 0;
-}
-
-.mode-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.mode-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.mode-hint {
-  font-size: 12px;
-  color: #6c6c70;
-  margin-left: 0px;
-  line-height: 1.4;
-}
-
-/* 手機細屏時保持垂直，無需額外處理 */
-@media (max-width: 560px) {
-  .mode-options {
-    flex-direction: column;
-    gap: 12px;
-  }
-  .mode-label {
-    white-space: nowrap;
-  }
-}
 }
