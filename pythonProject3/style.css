@@ -219,19 +219,29 @@ h4 {
   display: inline-block;
 }
 
+/* 模式選項 - 手機優化 */
 .mode-options {
   display: flex;
-  gap: 16px;
-  align-items: center;
+  flex-direction: row;
   flex-wrap: wrap;
-  margin: 16px 0;
+  gap: 24px;
+  align-items: center;
+  margin: 16px 0 8px 0;
 }
 
 .mode-label {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.mode-hint {
+  font-size: 12px;
+  color: #6c6c70;
+  margin-bottom: 8px;
+  padding-left: 24px;
 }
 
 .result-card {
@@ -240,6 +250,7 @@ h4 {
   padding-top: 8px;
 }
 
+/* 手機細屏 */
 @media (max-width: 560px) {
   .two-columns {
     grid-template-columns: 1fr;
@@ -277,9 +288,14 @@ h4 {
     padding: 12px;
     font-size: 16px;
   }
+
+  /* 手機上模式選項改為垂直排列，但每個label保持一行 */
   .mode-options {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+  }
+  .mode-label {
+    white-space: nowrap;
   }
 }

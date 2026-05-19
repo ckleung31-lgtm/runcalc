@@ -37,7 +37,7 @@
 <div id="trainingPaceBox">
   <label>平均配速 (mm:ss)</label>
   <input id="trainingPace" placeholder="6:00" value="6:00">
-  <div class="hint">💡 建議輸入最近2-3週嘅平均配速（唔係PB），反映當前狀態</div>
+  <div class="hint">💡 包括輕鬆跑、節奏跑、長課等所有課表嘅一週平均配速（唔係PB）</div>
 </div>
 
 <div id="racePaceBox" style="display:none;">
@@ -71,13 +71,15 @@
 <div class="mode-options">
   <label class="mode-label">
     <input type="checkbox" id="summerMode">
-    <span>☀️ 夏季模式 (香港夏天)</span>
+    <span>☀️ 夏季模式</span>
   </label>
   <label class="mode-label">
     <input type="checkbox" id="crossTrainMode">
-    <span>🔄 Cross Training (取代 Recovery Run)</span>
+    <span>🔄 Cross Training</span>
   </label>
 </div>
+<div class="mode-hint" id="summerHint">香港夏天適用（配速自動慢4%）</div>
+<div class="mode-hint" id="crossHint">以游泳/單車/肌力取代恢復跑</div>
 
 <hr>
 
