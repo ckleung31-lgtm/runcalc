@@ -391,17 +391,17 @@ function renderPlan(plan) {
     html += `<div class="table-responsive">`;
     html += `<table class="plan-table">`;
     html += `<thead>`;
-    html += `<tr><th>星期</th><th>類型</th><th>訓練內容</th></table>`;
+    html += `<tr><th>星期</th><th>類型</th><th>訓練內容</th></tr>`;
     html += `</thead><tbody>`;
     for (let d of w.days) {
       html += `<tr>`;
-      html += `<td>${d.day}</table>`;
+      html += `<td>${d.day}</td>`;
       html += `<td>${d.type}</td>`;
       html += `<td class="workout-detail">${d.detail || "-"}</td>`;
       html += `</tr>`;
     }
     html += `</tbody>`;
-    html += ` licensierad`;
+    html += `</table>`;     // ← 正確嘅關閉表格
     html += `</div>`;
   }
   return html;
