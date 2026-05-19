@@ -172,33 +172,65 @@ button:active {
   color: #b45f06;
 }
 
-/* 表格 */
-table {
+/* ========= 訓練課表表格樣式 (手機優化) ========= */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 20px;
+}
+
+.plan-table {
+  min-width: 500px; /* 確保在手機上可以滑動，避免欄位過度壓縮 */
   width: 100%;
   border-collapse: collapse;
-  margin-top: 12px;
   font-size: 14px;
 }
 
-th {
+.plan-table th {
   background: #007aff;
   color: white;
   padding: 10px 6px;
   font-weight: 600;
+  text-align: left;
 }
 
-td {
-  padding: 10px 6px;
+.plan-table td {
+  padding: 12px 6px;
   border-bottom: 1px solid #e5e5ea;
   vertical-align: top;
 }
 
-tr:nth-child(even) {
-  background: #f9f9fb;
+/* 關鍵：設定各欄位寬度 */
+.plan-table th:first-child,
+.plan-table td:first-child {
+  width: 70px;  /* 星期欄位 */
+  white-space: nowrap;
 }
 
-td:last-child {
+.plan-table th:nth-child(2),
+.plan-table td:nth-child(2) {
+  width: 85px;  /* 類型欄位 */
+  white-space: nowrap;
+}
+
+/* 訓練內容欄位：讓它佔據最多空間，並允許換行 */
+.plan-table th:nth-child(3),
+.plan-table td:nth-child(3) {
+  width: auto;
   word-break: break-word;
+  white-space: normal;
+}
+
+/* 最終達成度欄位（如果有），如果沒有，這個規則不會生效 */
+.plan-table th:last-child,
+.plan-table td:last-child {
+  width: 100px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+tr:nth-child(even) {
+  background: #f9f9fb;
 }
 
 h4 {
@@ -210,7 +242,7 @@ h4 {
   display: inline-block;
 }
 
-/* 模式選項 (手機垂直排列) */
+/* 模式選項 */
 .mode-options {
   display: flex;
   gap: 16px;
@@ -234,7 +266,7 @@ h4 {
   padding-top: 8px;
 }
 
-/* 手機細屏 */
+/* 手機細屏調整 */
 @media (max-width: 560px) {
   .two-columns {
     grid-template-columns: 1fr;
@@ -249,12 +281,26 @@ h4 {
   .container {
     padding: 16px 12px;
   }
-  table, th, td {
-    font-size: 13px;
+
+  .plan-table {
+    font-size: 12px;
   }
-  th, td {
+
+  .plan-table th:first-child,
+  .plan-table td:first-child {
+    width: 55px;  /* 手機上星期欄位稍窄 */
+  }
+
+  .plan-table th:nth-child(2),
+  .plan-table td:nth-child(2) {
+    width: 70px;  /* 手機上類型欄位稍窄 */
+  }
+
+  .plan-table th,
+  .plan-table td {
     padding: 8px 4px;
   }
+
   h3 {
     font-size: 18px;
   }
@@ -269,8 +315,5 @@ h4 {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
-  }
-  .mode-label {
-    white-space: normal;
   }
 }

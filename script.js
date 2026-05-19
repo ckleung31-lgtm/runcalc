@@ -229,59 +229,42 @@ function applyGenderAdjustment(raceTimeSec, gender, distanceKm) {
   return Math.round(raceTimeSec * 1.07);
 }
 
-// ===== 智慧解析比賽時間 =====
 function smartParseRaceTime(input, distanceKm) {
   if (!input || input.trim() === "") return null;
   let str = input.trim();
-  if (str.includes(":")) {
-    return paceToSec(str);
-  }
+  if (str.includes(":")) return paceToSec(str);
   let digits = str.replace(/\D/g, '');
   if (digits.length === 0) return null;
-
   let isLong = distanceKm >= 21.1;
-
   if (isLong && digits.length >= 5) {
     if (digits.length === 6) {
-      let h = parseInt(digits.substring(0,2));
-      let m = parseInt(digits.substring(2,4));
-      let s = parseInt(digits.substring(4,6));
+      let h = parseInt(digits.substring(0,2)), m = parseInt(digits.substring(2,4)), s = parseInt(digits.substring(4,6));
       if (m < 60 && s < 60) return h*3600 + m*60 + s;
     } else if (digits.length === 5) {
-      let h = parseInt(digits.charAt(0));
-      let m = parseInt(digits.substring(1,3));
-      let s = parseInt(digits.substring(3,5));
+      let h = parseInt(digits.charAt(0)), m = parseInt(digits.substring(1,3)), s = parseInt(digits.substring(3,5));
       if (m < 60 && s < 60) return h*3600 + m*60 + s;
     } else if (digits.length === 4) {
-      let m = parseInt(digits.substring(0,2));
-      let s = parseInt(digits.substring(2,4));
+      let m = parseInt(digits.substring(0,2)), s = parseInt(digits.substring(2,4));
       if (m < 60 && s < 60) return m*60 + s;
     }
   } else {
     if (digits.length === 4) {
-      let m = parseInt(digits.substring(0,2));
-      let s = parseInt(digits.substring(2,4));
+      let m = parseInt(digits.substring(0,2)), s = parseInt(digits.substring(2,4));
       if (s < 60) return m*60 + s;
     } else if (digits.length === 3) {
-      let m = parseInt(digits.charAt(0));
-      let s = parseInt(digits.substring(1,3));
+      let m = parseInt(digits.charAt(0)), s = parseInt(digits.substring(1,3));
       if (s < 60) return m*60 + s;
-    } else if (digits.length === 2) {
-      return parseInt(digits);
-    }
+    } else if (digits.length === 2) return parseInt(digits);
   }
   let sec = parseInt(digits);
-  if (!isNaN(sec)) return sec;
-  return null;
+  return !isNaN(sec) ? sec : null;
 }
 
-// ===== 配速基準轉換為 10K 配速 =====
 function get10kPaceSec() {
   let basis = document.getElementById("paceBasis").value;
   let isSummer = document.getElementById("summerMode").checked;
   let genderEl = document.getElementById("gender");
   let gender = genderEl ? genderEl.value : "male";
-
   if (basis === "training") {
     let trainingPaceSec = paceToSec(document.getElementById("trainingPace").value);
     if (!trainingPaceSec) return null;
@@ -295,7 +278,7 @@ function get10kPaceSec() {
     let rawTime = document.getElementById("raceTime").value;
     let raceTimeSec = smartParseRaceTime(rawTime, distKm);
     if (!raceTimeSec) {
-      alert(currentLang === "zh" ? "請輸入正確嘅比賽時間 (例如 4530 或 45:30)" : "Please enter a valid race time (e.g., 4530 or 45:30)");
+      alert(currentLang === "zh" ? "請輸入正確嘅比賽時間" : "Please enter a valid race time");
       return null;
     }
     let neutralTimeSec = raceTimeSec;
@@ -333,14 +316,12 @@ function predictRaceWithMileage(pace10kSec, mileage, goalFilter = null) {
     "HM": riegel(t10kSec, 10, 21.1),
     "FM": riegel(t10kSec, 10, 42.2)
   };
-
   if (gender === "female") {
     raw["5K"] = applyGenderAdjustment(raw["5K"], "female", 5);
     raw["10K"] = applyGenderAdjustment(raw["10K"], "female", 10);
     raw["HM"] = applyGenderAdjustment(raw["HM"], "female", 21.1);
     raw["FM"] = applyGenderAdjustment(raw["FM"], "female", 42.2);
   }
-
   let adj = { ...raw };
   if (mileage < 30) { adj.HM = raw.HM * 1.15; adj.FM = raw.FM * 1.25; }
   else if (mileage < 40) { adj.HM = raw.HM * 1.10; adj.FM = raw.FM * 1.15; }
@@ -354,7 +335,6 @@ function predictRaceWithMileage(pace10kSec, mileage, goalFilter = null) {
   return adj;
 }
 
-// 心率區間
 function getHRZones(age, method, maxHr, restHr) {
   let max = method === "basic" ? 220 - age : Number(maxHr);
   let calc = (p) => method === "basic" ? Math.round(max * p) : Math.round(restHr + (max - restHr) * p);
@@ -367,7 +347,6 @@ function getHRZones(age, method, maxHr, restHr) {
   };
 }
 
-// ===== Taper 調整 =====
 function getTaperMultiplier(weeksToRace) {
   if (weeksToRace >= 3) return 1.0;
   if (weeksToRace === 2) return 0.8;
@@ -410,51 +389,32 @@ function getLongRunKm(week, totalWeeks, goal) {
   return km;
 }
 
-// ===== Interval 配速按距離區分 =====
 function getIntervalPace(distance, pace10kSec) {
   let multiplier;
-  if (distance === "400m") {
-    multiplier = 0.89;
-  } else if (distance === "800m") {
-    multiplier = 0.93;
-  } else {
-    multiplier = 0.945;
-  }
+  if (distance === "400m") multiplier = 0.89;
+  else if (distance === "800m") multiplier = 0.93;
+  else multiplier = 0.945;
   return secToPace(Math.round(pace10kSec * multiplier));
 }
 
-// ===== Tempo 配速按時間長短區分 =====
 function getTempoPace(tempoMinutes, baseTempoPaceSec) {
-  if (tempoMinutes <= 15) {
-    return secToPace(Math.round(baseTempoPaceSec * 0.98));
-  } else if (tempoMinutes <= 25) {
-    return secToPace(baseTempoPaceSec);
-  } else if (tempoMinutes <= 35) {
-    return secToPace(Math.round(baseTempoPaceSec * 1.02));
-  } else {
-    return secToPace(Math.round(baseTempoPaceSec * 1.04));
-  }
+  if (tempoMinutes <= 15) return secToPace(Math.round(baseTempoPaceSec * 0.98));
+  if (tempoMinutes <= 25) return secToPace(baseTempoPaceSec);
+  if (tempoMinutes <= 35) return secToPace(Math.round(baseTempoPaceSec * 1.02));
+  return secToPace(Math.round(baseTempoPaceSec * 1.04));
 }
 
 function getInterval(w, pace10kSec, goal, weeksToRace) {
   let sets = [
-    { d: "400m x6", rest: 90, dist: "400m", reps: 6 },
-    { d: "400m x8", rest: 80, dist: "400m", reps: 8 },
-    { d: "800m x5", rest: 120, dist: "800m", reps: 5 },
-    { d: "1k x5", rest: 150, dist: "1k", reps: 5 },
-    { d: "1.2k x4", rest: 180, dist: "1.2k", reps: 4 }
+    { d: "400m x6", rest: 90, dist: "400m" },
+    { d: "400m x8", rest: 80, dist: "400m" },
+    { d: "800m x5", rest: 120, dist: "800m" },
+    { d: "1k x5", rest: 150, dist: "1k" },
+    { d: "1.2k x4", rest: 180, dist: "1.2k" }
   ];
-
-  if (weeksToRace === 2) {
-    return `4 x 200m strides (輕快) @ ${secToPace(Math.round(pace10kSec * 0.95))}`;
-  }
-  if (weeksToRace === 1) {
-    return `3 x 100m strides (放鬆) @ 接近比賽配速`;
-  }
-  if (weeksToRace === 0) {
-    return `🏁 比賽日`;
-  }
-
+  if (weeksToRace === 2) return `4 x 200m strides (輕快) @ ${secToPace(Math.round(pace10kSec * 0.95))}`;
+  if (weeksToRace === 1) return `3 x 100m strides (放鬆) @ 接近比賽配速`;
+  if (weeksToRace === 0) return `🏁 比賽日`;
   let s = sets[w % sets.length];
   let pace = getIntervalPace(s.dist, pace10kSec);
   let restMin = Math.floor(s.rest / 60);
@@ -470,20 +430,11 @@ function buildWeek(days, paces, longRunKm, interval, goal, week, totalWeeks, pac
   let easyMin = getEasyMinutes(week, totalWeeks, goal);
   let recoveryMin = getRecoveryMinutes(goal);
   let tempoMin = getTempoMinutes(goal, weeksToRace);
-
   let baseTempoPaceSec = pace10kSec * 1.02;
   let tempoPace = getTempoPace(tempoMin, baseTempoPaceSec);
-  let tempoDetail = (weeksToRace === 0)
-    ? "🏁 比賽日"
-    : `10WU + ${tempoMin}T + 10CD @ ${tempoPace}`;
-
-  let crossTrainDetail = currentLang === "zh"
-    ? "游泳30min / 單車45min / 肌力訓練"
-    : "Swim 30min / Bike 45min / Strength";
-  let recoveryDetail = crossTrain
-    ? `${t.crossTraining}: ${crossTrainDetail}`
-    : `${recoveryMin}min ${t.recoveryRun} @ ${paces.recovery}`;
-
+  let tempoDetail = (weeksToRace === 0) ? "🏁 比賽日" : `10WU + ${tempoMin}T + 10CD @ ${tempoPace}`;
+  let crossTrainDetail = currentLang === "zh" ? "游泳30min / 單車45min / 肌力訓練" : "Swim 30min / Bike 45min / Strength";
+  let recoveryDetail = crossTrain ? `${t.crossTraining}: ${crossTrainDetail}` : `${recoveryMin}min ${t.recoveryRun} @ ${paces.recovery}`;
   let baseWeek = [
     { day: t.dayMon, type: t.rest, detail: "-" },
     { day: t.dayTue, type: t.interval, detail: interval },
@@ -494,13 +445,11 @@ function buildWeek(days, paces, longRunKm, interval, goal, week, totalWeeks, pac
     { day: t.daySun, type: t.long, detail: (weeksToRace === 0) ? "🏁 RACE DAY" : `${longRunKm}km ${t.long} @ ${paces.long}` }
   ];
   if (crossTrain) baseWeek[2].type = t.crossTraining;
-
   if (weeksToRace === 0) {
     baseWeek[6].type = "🏁 RACE DAY";
     baseWeek[6].detail = `${goal} 比賽日！加油！`;
     return baseWeek;
   }
-
   let weekPlan = JSON.parse(JSON.stringify(baseWeek));
   if (days <= 2) {
     weekPlan = weekPlan.map(d => ({ day: d.day, type: t.rest, detail: "-" }));
@@ -513,14 +462,8 @@ function buildWeek(days, paces, longRunKm, interval, goal, week, totalWeeks, pac
     4: [t.interval, t.recoveryRun, t.tempo, t.long],
     5: [t.interval, t.recoveryRun, t.tempo, t.easy, t.long]
   };
-  if (keepTypes[days]) {
-    return weekPlan.map(d => keepTypes[days].includes(d.type) ? d : { day: d.day, type: t.rest, detail: "-" });
-  }
-  if (days === 6) {
-    return weekPlan.map(d =>
-      d.day === t.dayFri ? { day: d.day, type: t.easy, detail: `${easyMin}min ${t.easy} @ ${paces.easy}` } : d
-    );
-  }
+  if (keepTypes[days]) return weekPlan.map(d => keepTypes[days].includes(d.type) ? d : { day: d.day, type: t.rest, detail: "-" });
+  if (days === 6) return weekPlan.map(d => d.day === t.dayFri ? { day: d.day, type: t.easy, detail: `${easyMin}min ${t.easy} @ ${paces.easy}` } : d);
   return weekPlan;
 }
 
@@ -536,23 +479,27 @@ function generatePlan(paces, goal, weeks, days, pace10kSec) {
   return plan;
 }
 
+// ===== 渲染計劃 (純表格，無達成度功能) =====
 function renderPlan(plan) {
   let t = lang[currentLang];
   let html = "";
   for (let w of plan) {
     html += `<h4>📆 ${t.week} ${w.week}${t.weekSuffix}</h4>`;
+    html += `<div class="table-responsive">`;
     html += `<table class="plan-table">`;
-    html += `<thead><tr><th>${t.dayHeader}</th><th>${t.typeHeader}</th><th>${t.workoutHeader}</th></tr></thead>`;
-    html += `<tbody>`;
+    html += `<thead>`;
+    html += `<tr><th>${t.dayHeader}</th><th>${t.typeHeader}</th><th>${t.workoutHeader}</th></tr>`;
+    html += `</thead><tbody>`;
+
     for (let d of w.days) {
       html += `<tr>`;
       html += `<td>${d.day}</td>`;
       html += `<td>${d.type}</td>`;
-      html += `<td>${d.detail || "-"}</td>`;
+      html += `<td class="workout-detail">${d.detail || "-"}</td>`;
       html += `</tr>`;
     }
-    html += `</tbody>`;
-    html += `</table>`;
+    html += `</tbody></table>`;
+    html += `</div>`;
   }
   return html;
 }
@@ -590,7 +537,6 @@ function formatDateForIcs(date) {
   return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 }
 
-// ===== 主要計算函數 =====
 function calculate() {
   let mileage = Number(document.getElementById("mileage").value);
   let days = Number(document.getElementById("days").value);
