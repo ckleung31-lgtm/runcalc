@@ -399,21 +399,27 @@ function getLongRunKm(week, totalWeeks, goal, phase, enableMilestone, startPace1
 
 function getInterval(w, currentPace10k, weeksToRace, goal, totalWeeks, enableMixedPlan, enableYasso) {
   let phase = getTrainingPhase(totalWeeks - weeksToRace, totalWeeks);
-  let weekNum = totalWeeks - weeksToRace + 1;  // 第幾週（1-based）
+  let weekNum = totalWeeks - weeksToRace + 1;
 
   // Yasso 800：只喺全馬目標 + 啟用 Yasso + 巔峰期嘅第一週（倒數第5週）出現一次
   let isYassoWeek = (enableYasso && goal === "FM" && phase === "peak" && weeksToRace === 5);
 
   if (isYassoWeek) {
+    // 目標全馬時間（秒）
     let targetMarathonSec = currentPace10k * 42.2;
+    // 目標全馬時間（分鐘）
     let targetMarathonMin = targetMarathonSec / 60;
+    // Yasso 800 目標（秒）= 全馬分鐘數
     let yassoSeconds = Math.round(targetMarathonMin);
+    // 合理範圍：2:30 (150秒) 到 6:00 (360秒)
+    yassoSeconds = Math.min(360, Math.max(150, yassoSeconds));
+
     let yassoMin = Math.floor(yassoSeconds / 60);
     let yassoSec = yassoSeconds % 60;
     let yassoTime = `${yassoMin}:${yassoSec.toString().padStart(2,'0')}`;
     return {
       type: "yasso",
-      detail: `🏁 Yasso 800 測試: 10 x 800m @ ${yassoTime} (跑幾耐休幾耐，例如 ${yassoTime} 跑 + ${yassoTime} 休息)`,
+      detail: `🏁 Yasso 800 測試: 10 x 800m @ ${yassoTime} (跑幾耐休幾耐，例如跑 4:17/km，休息 4分17秒)`,
       isYasso: true
     };
   }
@@ -433,7 +439,6 @@ function getInterval(w, currentPace10k, weeksToRace, goal, totalWeeks, enableMix
       };
     }
     if (phase === "peak") {
-      // 巔峰期嘅非 Yasso 週，用正常間歇
       return {
         type: "interval",
         detail: `1k x 5 @ ${secToPace(Math.round(currentPace10k * 0.95))} (休 2:30)`
@@ -445,7 +450,7 @@ function getInterval(w, currentPace10k, weeksToRace, goal, totalWeeks, enableMix
     }
   }
 
-  // 預設課表（當混合課表關閉時）
+  // 預設課表
   let sets = [
     { d: "400m x6", rest: 90, multiplier: 0.89 },
     { d: "400m x8", rest: 80, multiplier: 0.89 },
