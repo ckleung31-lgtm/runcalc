@@ -1,3 +1,7 @@
+// ==================== 全域變數 ====================
+let currentTrainingMode = "pace";  // "pace" 或 "hr"
+let currentHrZones = null;
+
 // ==================== 儲存與讀取 ====================
 document.getElementById("method").addEventListener("change", function () {
   document.getElementById("karvonenBox").style.display = this.value === "karvonen" ? "block" : "none";
@@ -27,6 +31,9 @@ document.getElementById("raceTime").addEventListener("change", function() { save
 document.getElementById("maxHr").addEventListener("change", function() { saveSettings(); calculate(); });
 document.getElementById("restHr").addEventListener("change", function() { saveSettings(); calculate(); });
 document.getElementById("weeks").addEventListener("change", function() { saveSettings(); calculate(); });
+document.getElementById("enableMilestone").addEventListener("change", function() { saveSettings(); calculate(); });
+document.getElementById("enableYasso").addEventListener("change", function() { saveSettings(); calculate(); });
+document.getElementById("enableMixedPlan").addEventListener("change", function() { saveSettings(); calculate(); });
 document.getElementById("exportIcsBtn").addEventListener("click", exportToIcs);
 document.getElementById("resetStorageBtn").addEventListener("click", resetStorage);
 document.getElementById("calculateBtn").addEventListener("click", calculate);
@@ -45,7 +52,11 @@ function saveSettings() {
     maxHr: document.getElementById("maxHr").value,
     restHr: document.getElementById("restHr").value,
     goal: document.getElementById("goal").value,
-    weeks: document.getElementById("weeks").value
+    weeks: document.getElementById("weeks").value,
+    enableMilestone: document.getElementById("enableMilestone").checked,
+    enableYasso: document.getElementById("enableYasso").checked,
+    enableMixedPlan: document.getElementById("enableMixedPlan").checked,
+    trainingMode: currentTrainingMode
   };
   localStorage.setItem("runningSettings", JSON.stringify(settings));
 }
@@ -67,6 +78,10 @@ function loadSettings() {
   document.getElementById("restHr").value = s.restHr || 60;
   document.getElementById("goal").value = s.goal || "HM";
   document.getElementById("weeks").value = s.weeks || 12;
+  document.getElementById("enableMilestone").checked = s.enableMilestone !== undefined ? s.enableMilestone : true;
+  document.getElementById("enableYasso").checked = s.enableYasso || false;
+  document.getElementById("enableMixedPlan").checked = s.enableMixedPlan !== undefined ? s.enableMixedPlan : true;
+  currentTrainingMode = s.trainingMode || "pace";
 
   let isRace = document.getElementById("paceBasis").value === "race";
   document.getElementById("trainingPaceBox").style.display = isRace ? "none" : "block";
@@ -167,6 +182,14 @@ function get10kPaceSec() {
   }
 }
 
+// ==================== 動態配速（隨週數進步）====================
+function getCurrent10kPace(startPace10k, week, totalWeeks, goal) {
+  let improvementRate = { "5K": 0.05, "10K": 0.06, "HM": 0.08, "FM": 0.10 }[goal] || 0.06;
+  let progress = week / totalWeeks;
+  let currentPace = startPace10k * (1 - improvementRate * progress);
+  return Math.round(currentPace);
+}
+
 // ==================== 配速區間（連夏季建議）====================
 function getPaceZones(pace10k) {
   let normal = {
@@ -246,6 +269,24 @@ function getHRZones(age, method, maxHr, restHr) {
   };
 }
 
+function renderHRZonesWithMode(hr, currentMode) {
+  let modeHtml = `
+    <div class="mode-buttons">
+      <button id="paceModeBtn" class="mode-btn ${currentMode === 'pace' ? 'active' : ''}">📊 配速模式</button>
+      <button id="hrModeBtn" class="mode-btn ${currentMode === 'hr' ? 'active' : ''}">❤️ 心率模式</button>
+    </div>
+  `;
+
+  return `<div class="zone-card"><h3>❤️ 心率區間 (bpm)</h3>
+    <p>Z1 恢復: ${hr.z1[0]}–${hr.z1[1]}</p>
+    <p>Z2 有氧: ${hr.z2[0]}–${hr.z2[1]}</p>
+    <p>Z3 耐力: ${hr.z3[0]}–${hr.z3[1]}</p>
+    <p>Z4 閾值: ${hr.z4[0]}–${hr.z4[1]}</p>
+    <p>Z5 最大: ${hr.z5[0]}–${hr.z5[1]}</p>
+    ${modeHtml}
+  </div>`;
+}
+
 // ==================== 預測比賽時間 ====================
 function predictRace(pace10k, mileage) {
   let gender = document.getElementById("gender").value;
@@ -272,7 +313,15 @@ function predictRace(pace10k, mileage) {
   return raw;
 }
 
-// ==================== 訓練計劃 ====================
+// ==================== 訓練計劃（混合課表）====================
+function getTrainingPhase(week, totalWeeks) {
+  let weeksToRace = totalWeeks - week;
+  if (weeksToRace > 10) return "base";
+  if (weeksToRace > 5) return "build";
+  if (weeksToRace > 2) return "peak";
+  return "taper";
+}
+
 function getTaperMultiplier(weeksToRace) {
   if (weeksToRace >= 3) return 1.0;
   if (weeksToRace === 2) return 0.8;
@@ -280,90 +329,215 @@ function getTaperMultiplier(weeksToRace) {
   return 0;
 }
 
-function getEasyMinutes(week, totalWeeks, goal) {
+function getEasyMinutes(week, totalWeeks, goal, phase) {
   let weeksToRace = totalWeeks - week;
   let progress = Math.min(1, week / totalWeeks);
   let maxMin = goal === "FM" ? 60 : 55;
   let base = Math.round(30 + (maxMin - 30) * progress);
-  let taper = getTaperMultiplier(weeksToRace);
-  let result = Math.max(20, Math.round(base * taper));
-  if (weeksToRace === 1) return Math.min(result, 35);
-  return result;
+
+  if (phase === "taper") {
+    let taper = getTaperMultiplier(weeksToRace);
+    let result = Math.max(20, Math.round(base * taper));
+    if (weeksToRace === 1) return Math.min(result, 35);
+    return result;
+  }
+  return base;
 }
 
 function getRecoveryMinutes(goal) {
   return goal === "FM" ? 30 : 25;
 }
 
-function getTempoMinutes(goal, weeksToRace) {
+function getTempoMinutes(goal, weeksToRace, phase) {
   let base = { "5K":15, "10K":20, "HM":30, "FM":40 }[goal] || 20;
-  let taper = getTaperMultiplier(weeksToRace);
-  let result = Math.round(base * taper);
-  if (weeksToRace === 1) return Math.max(8, result);
-  return result;
+
+  if (phase === "base") return Math.round(base * 0.7);
+  if (phase === "build") return base;
+  if (phase === "peak") return Math.round(base * 1.2);
+  if (phase === "taper") {
+    let taper = getTaperMultiplier(weeksToRace);
+    let result = Math.round(base * taper);
+    return Math.max(8, result);
+  }
+  return base;
 }
 
-function getLongRunKm(week, totalWeeks, goal) {
+function getLongRunKm(week, totalWeeks, goal, phase, enableMilestone, startPace10k) {
   let weeksToRace = totalWeeks - week;
   let baseLong = { "5K":6, "10K":8, "HM":12, "FM":16 }[goal];
   let maxLong = { "5K":14, "10K":18, "HM":24, "FM":35 }[goal];
   let progress = Math.min(1, week / totalWeeks);
   let km = Math.round(baseLong + (maxLong - baseLong) * progress);
-  if (weeksToRace === 3) return Math.round(km * 0.85);
-  if (weeksToRace === 2) return Math.round(km * 0.65);
-  if (weeksToRace === 1) return Math.round(km * 0.35);
-  return km;
+
+  // 里程碑測試（全馬半馬測試 / 半馬10K測試）
+  if (enableMilestone) {
+    if (goal === "FM" && week === Math.floor(totalWeeks * 0.6)) {
+      return { type: "milestone", distance: 21.1, name: "半馬測試" };
+    }
+    if (goal === "HM" && week === Math.floor(totalWeeks * 0.6)) {
+      return { type: "milestone", distance: 10, name: "10K 測試" };
+    }
+    if (goal === "10K" && week === Math.floor(totalWeeks * 0.5)) {
+      return { type: "milestone", distance: 5, name: "5K 測試" };
+    }
+  }
+
+  if (phase === "taper") {
+    if (weeksToRace === 3) return Math.round(km * 0.85);
+    if (weeksToRace === 2) return Math.round(km * 0.65);
+    if (weeksToRace === 1) return Math.round(km * 0.35);
+    return km;
+  }
+
+  if (phase === "peak") {
+    // 巔峰期長課加入馬拉松配速段落
+    return { type: "long_with_mp", distance: km, mpKm: Math.round(km * 0.6) };
+  }
+
+  return { type: "normal", distance: km };
 }
 
-function getIntervalPace(dist, pace10k) {
-  if (dist === "400m") return secToPace(Math.round(pace10k * 0.89));
-  if (dist === "800m") return secToPace(Math.round(pace10k * 0.93));
-  return secToPace(Math.round(pace10k * 0.945));
-}
+function getInterval(w, currentPace10k, weeksToRace, goal, totalWeeks, enableMixedPlan, enableYasso) {
+  let phase = getTrainingPhase(totalWeeks - weeksToRace, totalWeeks);
+  let weekNum = totalWeeks - weeksToRace + 1;  // 第幾週（1-based）
 
-function getInterval(w, pace10k, weeksToRace) {
+  // Yasso 800：只喺全馬目標 + 啟用 Yasso + 巔峰期嘅第一週（倒數第5週）出現一次
+  let isYassoWeek = (enableYasso && goal === "FM" && phase === "peak" && weeksToRace === 5);
+
+  if (isYassoWeek) {
+    let targetMarathonSec = currentPace10k * 42.2;
+    let targetMarathonMin = targetMarathonSec / 60;
+    let yassoSeconds = Math.round(targetMarathonMin);
+    let yassoMin = Math.floor(yassoSeconds / 60);
+    let yassoSec = yassoSeconds % 60;
+    let yassoTime = `${yassoMin}:${yassoSec.toString().padStart(2,'0')}`;
+    return {
+      type: "yasso",
+      detail: `🏁 Yasso 800 測試: 10 x 800m @ ${yassoTime} (跑幾耐休幾耐，例如 ${yassoTime} 跑 + ${yassoTime} 休息)`,
+      isYasso: true
+    };
+  }
+
+  // 混合課表（按階段）
+  if (enableMixedPlan) {
+    if (phase === "base") {
+      return {
+        type: "interval",
+        detail: `400m x 6 @ ${secToPace(Math.round(currentPace10k * 0.89))} (休 90秒)`
+      };
+    }
+    if (phase === "build") {
+      return {
+        type: "interval",
+        detail: `800m x 5 @ ${secToPace(Math.round(currentPace10k * 0.93))} (休 2分鐘)`
+      };
+    }
+    if (phase === "peak") {
+      // 巔峰期嘅非 Yasso 週，用正常間歇
+      return {
+        type: "interval",
+        detail: `1k x 5 @ ${secToPace(Math.round(currentPace10k * 0.95))} (休 2:30)`
+      };
+    }
+    if (phase === "taper") {
+      if (weeksToRace === 2) return { type: "strides", detail: "4 x 200m 輕快跑" };
+      if (weeksToRace === 1) return { type: "strides", detail: "3 x 100m 放鬆跑" };
+    }
+  }
+
+  // 預設課表（當混合課表關閉時）
   let sets = [
-    { d: "400m x6", rest: 90, dist: "400m" },
-    { d: "400m x8", rest: 80, dist: "400m" },
-    { d: "800m x5", rest: 120, dist: "800m" },
-    { d: "1k x5", rest: 150, dist: "1k" },
-    { d: "1.2k x4", rest: 180, dist: "1.2k" }
+    { d: "400m x6", rest: 90, multiplier: 0.89 },
+    { d: "400m x8", rest: 80, multiplier: 0.89 },
+    { d: "800m x5", rest: 120, multiplier: 0.93 },
+    { d: "1k x5", rest: 150, multiplier: 0.945 },
+    { d: "1.2k x4", rest: 180, multiplier: 0.945 }
   ];
-  if (weeksToRace === 2) return "4 x 200m 輕快跑";
-  if (weeksToRace === 1) return "3 x 100m 放鬆跑";
   let s = sets[w % sets.length];
-  let pace = getIntervalPace(s.dist, pace10k);
+  let pace = secToPace(Math.round(currentPace10k * s.multiplier));
   let restMin = Math.floor(s.rest / 60);
   let restSec = s.rest % 60;
   let restStr = restMin > 0 ? `${restMin}:${restSec.toString().padStart(2,'0')}` : `${restSec}秒`;
-  return `${s.d} @ ${pace} (休 ${restStr})`;
+  return {
+    type: "interval",
+    detail: `${s.d} @ ${pace} (休 ${restStr})`
+  };
 }
 
-function buildWeek(days, paces, longKm, interval, goal, week, totalWeeks, pace10k) {
+function buildWeek(days, paces, longRunInfo, intervalInfo, goal, week, totalWeeks, currentPace10k, trainingMode, hrZones, enableMixedPlan) {
   let weeksToRace = totalWeeks - week;
-  let easyMin = getEasyMinutes(week, totalWeeks, goal);
+  let phase = getTrainingPhase(week, totalWeeks);
+  let easyMin = getEasyMinutes(week, totalWeeks, goal, phase);
   let recoveryMin = getRecoveryMinutes(goal);
-  let tempoMin = getTempoMinutes(goal, weeksToRace);
-  let tempoPace = secToPace(Math.round(pace10k * 1.02));
+  let tempoMin = getTempoMinutes(goal, weeksToRace, phase);
+
+  // 節奏跑配速/心率
+  let tempoPace = secToPace(Math.round(currentPace10k * 1.02));
+  let tempoHr = hrZones ? `Z4 (${hrZones.z4[0]}-${hrZones.z4[1]} bpm)` : "";
+
+  let tempoDetail = "";
+  if (weeksToRace === 0) {
+    tempoDetail = "🏁 比賽日（休息或輕鬆熱身）";
+  } else if (trainingMode === "hr") {
+    tempoDetail = `10熱身 + ${tempoMin}節奏 + 10緩和 @ ${tempoHr}`;
+  } else {
+    tempoDetail = `10熱身 + ${tempoMin}節奏 + 10緩和 @ ${tempoPace}`;
+  }
+
+  // 輕鬆跑
+  let easyDetail = trainingMode === "hr"
+    ? `${easyMin}分鐘 @ Z2 (${hrZones.z2[0]}-${hrZones.z2[1]} bpm)`
+    : `${easyMin}分鐘 @ ${paces.easy}`;
+
+  // 恢復跑
+  let recoveryDetail = trainingMode === "hr"
+    ? `${recoveryMin}分鐘 @ Z1 (${hrZones.z1[0]}-${hrZones.z1[1]} bpm)`
+    : `${recoveryMin}分鐘 @ ${paces.recovery}`;
+
+  // 長課
+  let longDetail = "";
+  if (longRunInfo.type === "milestone") {
+    longDetail = `🏁 ${longRunInfo.name}: ${longRunInfo.distance}公里（盡力跑，評估進度）`;
+  } else if (longRunInfo.type === "long_with_mp") {
+    let mpPace = secToPace(Math.round(currentPace10k * 1.02));
+    longDetail = `${longRunInfo.distance}公里長課，最後 ${longRunInfo.mpKm}公里 @ 馬拉松配速 ${mpPace}`;
+  } else {
+    longDetail = trainingMode === "hr"
+      ? `${longRunInfo.distance}公里 @ Z2 (${hrZones.z2[0]}-${hrZones.z2[1]} bpm)`
+      : `${longRunInfo.distance}公里 @ ${paces.long}`;
+  }
+
+  // 間歇跑
+  let intervalDetail = "";
+  if (intervalInfo.type === "yasso") {
+    intervalDetail = intervalInfo.detail;
+  } else if (intervalInfo.type === "strides") {
+    intervalDetail = intervalInfo.detail;
+  } else {
+    intervalDetail = trainingMode === "hr"
+      ? `${intervalInfo.detail}（心率 Z5 >${hrZones.z5[0]} bpm）`
+      : intervalInfo.detail;
+  }
 
   let baseWeek = [
     { day: "星期一", type: "休息", detail: "-" },
-    { day: "星期二", type: "間歇跑", detail: interval },
-    { day: "星期三", type: "恢復跑", detail: `${recoveryMin}分鐘 @ ${paces.recovery}` },
-    { day: "星期四", type: "節奏跑", detail: `10熱身 + ${tempoMin}節奏 + 10緩和 @ ${tempoPace}` },
+    { day: "星期二", type: "間歇跑", detail: intervalDetail },
+    { day: "星期三", type: "恢復跑", detail: recoveryDetail },
+    { day: "星期四", type: "節奏跑", detail: tempoDetail },
     { day: "星期五", type: "休息", detail: "-" },
-    { day: "星期六", type: "輕鬆跑", detail: `${easyMin}分鐘 @ ${paces.easy}` },
-    { day: "星期日", type: "長課", detail: `${longKm}公里 @ ${paces.long}` }
+    { day: "星期六", type: "輕鬆跑", detail: easyDetail },
+    { day: "星期日", type: "長課", detail: longDetail }
   ];
 
   if (weeksToRace === 0) {
+    baseWeek[3] = { day: "星期四", type: "休息", detail: "比賽前放鬆" };
     baseWeek[6] = { day: "星期日", type: "比賽日", detail: `${goal} 加油！` };
   }
 
   if (days <= 2) {
     return [
-      { day: "星期四", type: "輕鬆跑", detail: `${easyMin}分鐘 @ ${paces.easy}` },
-      { day: "星期日", type: "長課", detail: `${Math.round(longKm * 0.7)}公里 @ ${paces.long}` }
+      { day: "星期四", type: "輕鬆跑", detail: easyDetail },
+      { day: "星期日", type: "長課", detail: longDetail }
     ];
   }
 
@@ -374,14 +548,22 @@ function buildWeek(days, paces, longKm, interval, goal, week, totalWeeks, pace10
   return baseWeek.filter(d => keep.includes(d.type) || d.type === "休息");
 }
 
-function generatePlan(pace10k, goal, weeks, days) {
-  let paces = getPaceZones(pace10k).normal;
+function generatePlan(startPace10k, goal, weeks, days, trainingMode, hrZones, enableMixedPlan, enableMilestone, enableYasso) {
   let plan = [];
-  for (let w = 0; w < weeks; w++) {
-    let longKm = getLongRunKm(w + 1, weeks, goal);
-    let interval = getInterval(w, pace10k, weeks - w);
-    let weekDays = buildWeek(days, paces, longKm, interval, goal, w + 1, weeks, pace10k);
-    plan.push({ week: w + 1, days: weekDays });
+  for (let w = 1; w <= weeks; w++) {
+    let currentPace = getCurrent10kPace(startPace10k, w, weeks, goal);
+    let paces = getPaceZones(currentPace).normal;
+    let weeksToRace = weeks - w;
+    let phase = getTrainingPhase(w, weeks);
+
+    let longRunInfo = getLongRunKm(w, weeks, goal, phase, enableMilestone, startPace10k);
+    if (typeof longRunInfo === "number") {
+      longRunInfo = { type: "normal", distance: longRunInfo };
+    }
+
+    let intervalInfo = getInterval(w, currentPace, weeksToRace, goal, weeks, enableMixedPlan, enableYasso);
+    let weekDays = buildWeek(days, paces, longRunInfo, intervalInfo, goal, w, weeks, currentPace, trainingMode, hrZones, enableMixedPlan);
+    plan.push({ week: w, days: weekDays });
   }
   return plan;
 }
@@ -454,34 +636,42 @@ function calculate() {
   let goal = document.getElementById("goal").value;
   let weeks = Number(document.getElementById("weeks").value) || 8;
 
+  // 週數提醒
+  let minWeeks = { "5K":6, "10K":8, "HM":10, "FM":12 }[goal];
+  if (weeks < minWeeks) {
+    let warningMsg = `⚠️ 你揀咗 ${weeks} 週，但 ${goal} 一般建議 ${minWeeks} 週以上。如果你已經有跑步習慣（每週跑 3-4 次），可以繼續；否則建議增加週數。`;
+    document.getElementById("result").innerHTML = `<div class="warning">${warningMsg}</div>`;
+    return;
+  }
+
   if (mileage < 15) {
     document.getElementById("result").innerHTML = `<div class="warning">🏃 每週跑量 ${mileage}km，建議先輕鬆跑，每週 2-3 次，每次 20-30 分鐘，達到 15km 以上再使用課表。</div>`;
     return;
   }
 
-  let pace10k = get10kPaceSec();
-  if (!pace10k) return;
+  let startPace10k = get10kPaceSec();
+  if (!startPace10k) return;
 
-  let zones = getPaceZones(pace10k);
-  let paceHtml = renderPaceZones(zones);
+  // 讀取進階功能設定
+  let enableMilestone = document.getElementById("enableMilestone").checked;
+  let enableYasso = document.getElementById("enableYasso").checked;
+  let enableMixedPlan = document.getElementById("enableMixedPlan").checked;
 
+  // 心率區間
   let hr = getHRZones(age, method, maxHr, restHr);
-  let race = predictRace(pace10k, mileage);
-  let plan = generatePlan(pace10k, goal, weeks, days);
-  window.lastPlan = plan;
+  currentHrZones = hr;
 
+  // 配速區間（用起始配速顯示，唔用動態）
+  let zones = getPaceZones(startPace10k);
+  let paceHtml = renderPaceZones(zones);
+  let hrHtml = renderHRZonesWithMode(hr, currentTrainingMode);
+
+  // 預測比賽時間（用起始配速）
+  let race = predictRace(startPace10k, mileage);
   let displayRace = {};
   if (goal === "5K") displayRace = { "5K": race["5K"], "10K": race["10K"] };
   else if (goal === "10K") displayRace = { "5K": race["5K"], "10K": race["10K"], "HM": race["HM"] };
   else displayRace = race;
-
-  let hrHtml = `<div class="zone-card"><h3>❤️ 心率區間 (bpm)</h3>
-    <p>Z1 恢復: ${hr.z1[0]}–${hr.z1[1]}</p>
-    <p>Z2 有氧: ${hr.z2[0]}–${hr.z2[1]}</p>
-    <p>Z3 耐力: ${hr.z3[0]}–${hr.z3[1]}</p>
-    <p>Z4 閾值: ${hr.z4[0]}–${hr.z4[1]}</p>
-    <p>Z5 最大: ${hr.z5[0]}–${hr.z5[1]}</p>
-  </div>`;
 
   let raceHtml = `<div class="prediction-card"><h3>🏁 預測比賽時間</h3><div class="prediction-grid">`;
   for (let [d, t] of Object.entries(displayRace)) {
@@ -491,10 +681,25 @@ function calculate() {
   if (goal === "FM" && mileage < 50) raceHtml += `<div class="warning">⚠️ 跑量不足，全馬預測可能偏快</div>`;
   raceHtml += `</div>`;
 
+  // 生成計劃（使用動態配速）
+  let plan = generatePlan(startPace10k, goal, weeks, days, currentTrainingMode, hr, enableMixedPlan, enableMilestone, enableYasso);
+  window.lastPlan = plan;
   let planHtml = `<h3>📅 訓練計劃</h3>${renderPlan(plan)}`;
 
   document.getElementById("result").innerHTML = `<div class="two-columns">${hrHtml}${paceHtml}</div>${raceHtml}${planHtml}`;
   saveSettings();
+
+  // 綁定模式切換按鈕事件
+  document.getElementById("paceModeBtn")?.addEventListener("click", function() {
+    currentTrainingMode = "pace";
+    saveSettings();
+    calculate();
+  });
+  document.getElementById("hrModeBtn")?.addEventListener("click", function() {
+    currentTrainingMode = "hr";
+    saveSettings();
+    calculate();
+  });
 }
 
 window.onload = function() {
