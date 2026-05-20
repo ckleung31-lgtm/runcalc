@@ -101,37 +101,6 @@ button:active {
   margin-top: 6px;
 }
 
-/* 進階功能區域 */
-.advanced-section {
-  background: #f9f9fb;
-  border-radius: 12px;
-  padding: 12px;
-  margin: 16px 0;
-}
-
-.advanced-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1c1c1e;
-  margin-bottom: 12px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #e5e5ea;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 10px 0;
-  font-weight: normal;
-  cursor: pointer;
-}
-
-.checkbox-label input {
-  width: auto;
-  margin: 0;
-}
-
 /* 兩欄佈局 */
 .two-columns {
   display: grid;
@@ -285,24 +254,6 @@ h4 {
   margin-top: 24px;
   border-top: 1px solid #e5e5ea;
   padding-top: 8px;
-}
-
-/* Yasso 輸入區域 */
-.yasso-input {
-  margin-top: 12px;
-  padding: 12px;
-  background: white;
-  border-radius: 10px;
-}
-
-.yasso-input label {
-  margin-top: 0;
-}
-
-.yasso-input input {
-  width: auto;
-  display: inline-block;
-  margin-right: 8px;
 }
 
 /* 手機細屏 */
